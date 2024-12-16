@@ -106,11 +106,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Tính toán các chỉ số cho từng điểm
                 const statsData = computePointwiseStats(ladderData, computedData);
-
+                const lineColor = getRandomColor(); // Lưu màu ngẫu nhiên vào một biến
                 datasets.push({
                     label: `${ccyPair} - Ladder`,
                     data: ladderData,
-                    borderColor: getRandomColor(),
+                    borderColor: lineColor,
                     showLine: true,
                     pointRadius: 3,
                     fill: false
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 datasets.push({
                     label: `${ccyPair} - Computed`,
                     data: computedData,
-                    borderColor: getRandomColor(),
+                    borderColor: lineColor,
                     borderDash: [5, 5],
                     showLine: true,
                     pointRadius: 3,
