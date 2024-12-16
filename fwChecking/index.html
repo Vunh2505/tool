@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPV Calculation and Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button {
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>NPV Calculation and Comparison</h1>
+    <div>
+        <h3>Interest Rates JSON</h3>
+        <textarea id="interestRatesInput" rows="10" placeholder="Paste Interest Rates JSON here"></textarea>
+    </div>
+    <div>
+        <h3>Portfolio JSON</h3>
+        <textarea id="portfolioInput" rows="10" placeholder="Paste Portfolio JSON here"></textarea>
+    </div>
+    <div>
+        <h3>NPV Ladder JSON</h3>
+        <textarea id="npvLadderInput" rows="10" placeholder="Paste NPV Ladder JSON here"></textarea>
+    </div>
+    <div>
+        <h3>Exchange Rates JSON</h3>
+        <textarea id="exchangeRatesInput" rows="10" placeholder="Paste Exchange Rates JSON here"></textarea>
+    </div>
+    <button id="processData">Process and Compare</button>
+    <div id="tableContainer"></div>
+    <canvas id="npvChart"></canvas>
+    <script src="script.js"></script>
+</body>
+</html>
