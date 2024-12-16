@@ -29,9 +29,27 @@
         }
         th {
             background-color: #f4f4f4;
+            position: sticky; /* Cố định header */
+            top: 0; /* Cố định header ở đỉnh */
+            z-index: 10; /* Đảm bảo header nằm trên các nội dung khác */
         }
         canvas {
             margin-top: 20px;
+        }
+        /* Đặt kích thước cho container và bảng */
+        .table-container {
+            max-height: 400px; /* Chiều cao tối đa của container */
+            overflow-y: auto; /* Cho phép cuộn theo chiều dọc */
+            border: 1px solid #ddd; /* Viền cho container */
+        }
+        /* Thêm shadow cho header khi cuộn */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 4px;
         }
     </style>
 </head>
