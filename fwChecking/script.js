@@ -1,3 +1,4 @@
+let chartInstance = null; // Biến toàn cục lưu trữ biểu đồ hiện tại
 document.addEventListener("DOMContentLoaded", () => {
     const interestRatesInput = document.getElementById("interestRatesInput");
     const portfolioInput = document.getElementById("portfolioInput");
@@ -107,6 +108,10 @@ document.addEventListener("DOMContentLoaded", () => {
             tableHTML += `</tbody></table>`;
             tableContainer.innerHTML = tableHTML;
 
+                    // Hủy biểu đồ cũ nếu đã tồn tại
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
             // Prepare data for Chart.js
             const datasets = [];
             Object.keys(npvLadder).forEach(ccyPair => {
@@ -144,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             // Draw Chart.js scatter plot
-            new Chart(npvChart, {
+            chartInstance = new Chart(npvChart, {
                 type: "scatter",
                 data: { datasets },
                 options: {
