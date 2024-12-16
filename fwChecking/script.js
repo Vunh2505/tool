@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const computedNPVs = {};
             let tableHTML = `
+                <div class="table-container">
                 <table>
                     <thead>
                         <tr>
@@ -35,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </tr>
                     </thead>
                     <tbody>
+                </div>
             `;
 
             // Process each ccyPair in the portfolio
