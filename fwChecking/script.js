@@ -1,4 +1,4 @@
-let chartInstance = null; // Biến toàn cục lưu trữ biểu đồ hiện tại
+let chartInstance = null; 
 document.addEventListener("DOMContentLoaded", () => {
     const interestRatesInput = document.getElementById("interestRatesInput");
     const portfolioInput = document.getElementById("portfolioInput");
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <th>CCY Pair</th>
                             <th>Tran ID</th>
                             <th>Exchange Rate</th>
-                            <th>Maturity Month</th>
+                            <th>Maturity Month (YF)</th>
                             <th>Discount Factor (Base CCY)</th>
                             <th>Discount Factor (Quote CCY)</th>
                             <th>Notional</th>
@@ -37,10 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         </tr>
                     </thead>
                     <tbody>
-                </div>
             `;
 
-            // Process each ccyPair in the portfolio
             Object.keys(portfolio.forwardTransactionPerCcyPairs).forEach(ccyPair => {
                 const transactions = portfolio.forwardTransactionPerCcyPairs[ccyPair];
                 const ladderRates = Object.keys(npvLadder[ccyPair]).map(rate => parseFloat(rate));
@@ -50,38 +48,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     transactions.forEach(transaction => {
                         const maturityMonths = getMaturityMonths(transaction.valueDate);
+                        const yfrace = getYearFraction(new Date(), new Date(transaction.valueDate), "actual/365");
 
-                        const yfrace = getYearFraction(new Date(), new Date(transaction.valueDate) );
-
-                        // Discount Factors
                         const discountFactorBase = getDiscountFactor(ccyPair.split("/")[0], maturityMonths, interestRates);
                         const discountFactorQuote = getDiscountFactor(ccyPair.split("/")[1], maturityMonths, interestRates);
 
-                        // Convert notional to USD
-                        //const contract = transaction.rmiType === "LHS"
-                        //        ? transaction.notional
-                        //        : -transaction.notional;
-                        const contract = transaction.notional;//convertToUSD(transaction.notional, ccyPair.split("/")[1], exchangeRates);
-                        //const counterToUSD = transaction.rmiType === "LHS"
-                        //    ? contractToUSD * rate
-                        //    : contractToUSD / rate;
-                        const counter = transaction.notional* (1/transaction.rate);
-                        //convertCurrency(transaction.notional,ccyPair.split("/")[1], ccyPair.split("/")[0],exchangeRates);
-                        //transaction.notional* (1/transaction.rate);
+                        const contract = transaction.notional;
+                        const counter = transaction.notional * (1 / transaction.rate);
 
-                        // Calculate NPV
-                        const contractAmountToday = contract/(1+discountFactorBase*yfrace);
-                        const counterAmountToday = counter/(1+discountFactorQuote*yfrace);
-                        const contractAmountTodayUSD = convertCurrency(contractAmountToday,ccyPair.split("/")[1],"USD", exchangeRates); //convertToUSD(contractAmo untToday,ccyPair.split("/")[1],exchangeRates);
-                        const counterAmountInContract = counterAmountToday* rate;
-                        const counterAmountTodayUSD = convertCurrency(counterAmountInContract,ccyPair.split("/")[1],"USD", exchangeRates);//convertToUSD(counterAmountToday*rate,ccyPair.split("/")[1],exchangeRates);
+                        const contractAmountToday = contract / (1 + discountFactorBase * yfrace);
+                        const counterAmountToday = counter / (1 + discountFactorQuote * yfrace);
+
+                        const contractAmountTodayUSD = convertCurrency(contractAmountToday, ccyPair.split("/")[1], "USD", exchangeRates);
+                        const counterAmountInContract = counterAmountToday * rate;
+                        const counterAmountTodayUSD = convertCurrency(counterAmountInContract, ccyPair.split("/")[1], "USD", exchangeRates);
+
                         const npv = transaction.rmiType === "LHS"
                             ? contractAmountTodayUSD - counterAmountTodayUSD
                             : counterAmountTodayUSD - contractAmountTodayUSD;
 
                         totalNPV += npv;
 
-                        // Add to table
                         tableHTML += `
                             <tr>
                                 <td>${ccyPair}</td>
@@ -105,29 +92,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             });
 
-            tableHTML += `</tbody></table>`;
+            tableHTML += `</tbody></table></div>`;
             tableContainer.innerHTML = tableHTML;
 
-                    // Hủy biểu đồ cũ nếu đã tồn tại
             if (chartInstance) {
                 chartInstance.destroy();
             }
-            // Prepare data for Chart.js
+
             const datasets = [];
             Object.keys(npvLadder).forEach(ccyPair => {
-                // Original NPV from ladder
-                const ladderData = Object.entries(npvLadder[ccyPair]).map(([rate, npv]) => ({
-                    x: parseFloat(rate),
-                    y: parseFloat(npv)
-                }));
+                const ladderData = Object.entries(npvLadder[ccyPair]).map(([r, n]) => ({ x: parseFloat(r), y: parseFloat(n) }));
+                const computedData = computedNPVs[ccyPair].map(({ rate, npv }) => ({ x: rate, y: npv }));
 
-                // Computed NPV
-                const computedData = computedNPVs[ccyPair].map(({ rate, npv }) => ({
-                    x: rate,
-                    y: npv
-                }));
+                // Tính toán các chỉ số cho từng điểm
+                const statsData = computePointwiseStats(ladderData, computedData);
 
-                // Add datasets
                 datasets.push({
                     label: `${ccyPair} - Ladder`,
                     data: ladderData,
@@ -146,16 +125,57 @@ document.addEventListener("DOMContentLoaded", () => {
                     pointRadius: 3,
                     fill: false
                 });
+
+                // Stats dataset với đầy đủ điểm
+                datasets.push({
+                    label: `Stats - ${ccyPair}`,
+                    data: statsData, // Mỗi điểm trong statsData chứa mae, relError, correlation riêng
+                    borderColor: "transparent",
+                    pointRadius: 3,
+                    backgroundColor: "rgba(0,0,0,0)", 
+                    showLine: false,
+                    fill: false
+                });
             });
 
-            // Draw Chart.js scatter plot
             chartInstance = new Chart(npvChart, {
                 type: "scatter",
                 data: { datasets },
                 options: {
                     plugins: {
                         legend: { position: "top" },
-                        title: { display: true, text: "NPV Comparison" }
+                        title: { display: true, text: "NPV Comparison" },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const dataset = context.dataset;
+                                    const x = context.parsed.x;
+                                    const y = context.parsed.y;
+
+                                    if (dataset.label.includes("Ladder")) {
+                                        return `${dataset.label}: Exchange Rate: ${x}, NPV: ${y}`;
+                                    }
+                                    if (dataset.label.includes("Computed")) {
+                                        return `${dataset.label}: Exchange Rate: ${x}, NPV: ${y}`;
+                                    }
+                                    if (dataset.label.includes("Stats")) {
+                                        const point = dataset.data[context.dataIndex];
+                                        const mae = point.mae !== undefined ? point.mae.toFixed(2) : "N/A";
+                                        const rel = point.relError !== undefined ? point.relError.toFixed(2) + "%" : "N/A";
+                                        const corr = (point.correlation !== undefined && !isNaN(point.correlation)) 
+                                            ? point.correlation.toFixed(3) 
+                                            : "N/A";
+                                        return [
+                                            `Exchange Rate: ${x}`,
+                                            `MAE: ${mae}`,
+                                            `Rel Error: ${rel}`,
+                                            `Correlation (0->i): ${corr}`
+                                        ];
+                                    }
+                                    return `${dataset.label}: (${x}, ${y})`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: { title: { display: true, text: "Exchange Rate" } },
@@ -168,51 +188,73 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Invalid JSON input. Please check the format.");
         }
     });
-    //   console.log("Start:"+start+"|End:"+end+"|actual day:"+actualDays);
+
+    function computePointwiseStats(ladderData, computedData) {
+        const n = ladderData.length;
+        const statsData = [];
+        for (let i = 0; i < n; i++) {
+            const ladderY = ladderData[i].y;
+            const compY = computedData[i].y;
+            const mae = Math.abs(compY - ladderY);
+            const relError = Math.abs((compY - ladderY) / ladderY) * 100;
+            const correlation = calculateCorrelationCoefficient(ladderData.slice(0, i+1), computedData.slice(0, i+1));
+
+            statsData.push({
+                x: ladderData[i].x,
+                y: ladderData[i].y,   // bạn có thể chọn hiển thị gì ở trục y; ở đây ta để y là ladderData[i].y
+                mae,
+                relError,
+                correlation
+            });
+        }
+        return statsData;
+    }
+
+    function calculateCorrelationCoefficient(ladderData, computedData) {
+        const n = ladderData.length;
+        if (n < 2) return NaN; // Không đủ dữ liệu để tính correlation
+        
+        let sumLadder = 0, sumComputed = 0, sumLadderSquared = 0, sumComputedSquared = 0, sumProduct = 0;
+        for (let i = 0; i < n; i++) {
+            const X = ladderData[i].y;
+            const Y = computedData[i].y;
+            sumLadder += X;
+            sumComputed += Y;
+            sumLadderSquared += X * X;
+            sumComputedSquared += Y * Y;
+            sumProduct += X * Y;
+        }
+
+        const numerator = n * sumProduct - sumLadder * sumComputed;
+        const denominator = Math.sqrt((n * sumLadderSquared - sumLadder ** 2) * (n * sumComputedSquared - sumComputed ** 2));
+        return denominator === 0 ? NaN : numerator / denominator;
+    }
+
     function getYearFraction(startDate, endDate, convention = "actual/365") {
-        // Chuyển đổi ngày về dạng Date, bỏ qua giờ
         const start = new Date(startDate);
         const end = new Date(endDate);
-    
-        // Kiểm tra xem ngày có hợp lệ hay không
         if (isNaN(start) || isNaN(end)) {
             throw new Error("Invalid date format");
         }
-    
-        // Tính toán số ngày thực tế giữa 2 ngày, không ảnh hưởng bởi giờ
-        const actualDays = Math.round((end.setHours(0, 0, 0, 0) - start.setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24)); 
-    
+        const actualDays = Math.round((end.setHours(0, 0, 0, 0) - start.setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24));
         if (convention === "actual/365") {
-            // Sử dụng công thức Actual/365
             return actualDays / 365;
         } else if (convention === "actual/actual") {
-            // Sử dụng công thức Actual/Actual
             const startYear = start.getFullYear();
             const endYear = end.getFullYear();
-    
             const startYearDays = isLeapYear(startYear) ? 366 : 365;
             const endYearDays = isLeapYear(endYear) ? 366 : 365;
-    
-            const startYearEnd = new Date(startYear, 11, 31); // Ngày 31 tháng 12 của năm bắt đầu
+
+            const startYearEnd = new Date(startYear, 11, 31);
             const daysInStartYear = Math.max(0, Math.round((startYearEnd - start) / (1000 * 60 * 60 * 24)) + 1);
-    
             const daysInEndYear = actualDays - daysInStartYear;
-    
-            return (
-                (daysInStartYear / startYearDays) +
-                (daysInEndYear / endYearDays)
-            );
+
+            return (daysInStartYear / startYearDays) + (daysInEndYear / endYearDays);
         } else {
             throw new Error("Unsupported day count convention. Use 'actual/365' or 'actual/actual'.");
         }
     }
-    
-    // Helper function để xác định năm nhuận
-    function isLeapYear(year) {
-        return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-    }
-    
-    // Helper function to determine if a year is a leap year
+
     function isLeapYear(year) {
         return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     }
@@ -221,94 +263,62 @@ document.addEventListener("DOMContentLoaded", () => {
         const today = new Date();
         const maturityDate = new Date(valueDate);
         const months = (maturityDate.getFullYear() - today.getFullYear()) * 12 + (maturityDate.getMonth() - today.getMonth());
-        return Math.max(months, 0); // Ensure non-negative
+        return Math.max(months, 0);
     }
 
     function getDiscountFactor(currency, maturityMonths, interestRates) {
         const rates = interestRates.interestRateMap[currency]?.rates || [];
         const maturities = interestRates.interestRateMap[currency]?.maturities || [];
         if (!rates.length || !maturities.length) return 1;
-    
-        // Convert maturity months to years for comparison
+
         const maturityInYears = maturityMonths / 12;
-    
-        // Loop through maturities to find the correct interval for interpolation
         for (let i = 0; i < maturities.length - 1; i++) {
-            const lowerMaturity = parseFloat(maturities[i].replace(/[MY]/, "")) / (maturities[i].endsWith("M") ? 12 : 1);
-            const upperMaturity = parseFloat(maturities[i + 1].replace(/[MY]/, "")) / (maturities[i + 1].endsWith("M") ? 12 : 1);
-    
+            const lowerMaturity = parseMaturity(maturities[i]);
+            const upperMaturity = parseMaturity(maturities[i + 1]);
+
             if (maturityInYears >= lowerMaturity && maturityInYears <= upperMaturity) {
                 const lowerRate = rates[i];
                 const upperRate = rates[i + 1];
-    
-                // Linear interpolation for the interest rate
                 const interpolatedRate =
                     lowerRate + ((upperRate - lowerRate) * (maturityInYears - lowerMaturity)) / (upperMaturity - lowerMaturity);
-    
-                // Correct calculation for discount factor: exp(-rate * maturityInYears)
-                const discountFactor = interpolatedRate;//Math.exp(-interpolatedRate * maturityMonths / 12);
-              
-    
-                return discountFactor;
+                // Dùng interpolatedRate làm discountFactor giả định
+                return interpolatedRate;
             }
         }
-    
-        // If no matching interval is found, return 1 (default discount factor)
+
         return 1;
     }
 
-    function convertToUSD(amount, currency, exchangeRates) {
-        // Tìm tỷ giá trực tiếp từ currency sang USD
-        const directRate = exchangeRates[`${currency}/USD`];
-        if (directRate) {
-            // Nếu có tỷ giá trực tiếp, nhân với amount
-            return amount * directRate;
+    function parseMaturity(m) {
+        if (m.endsWith("M")) {
+            return parseFloat(m.replace("M", "")) / 12;
+        } else if (m.endsWith("Y")) {
+            return parseFloat(m.replace("Y", ""));
         }
-    
-        // Tìm tỷ giá chéo (Cross Rate)
-        const usdToCurrency = Object.keys(exchangeRates).find(key => key.startsWith("USD/") && key.endsWith(currency));
-        const baseToCurrency = Object.keys(exchangeRates).find(key => key.startsWith("AUD/") && key.endsWith(currency));
-        const baseToUsd = exchangeRates["AUD/USD"];
-    
-        if (usdToCurrency) {
-            // Nếu có tỷ giá USD/XXX, sử dụng đảo ngược của nó
-            const crossRate = 1 / exchangeRates[usdToCurrency];
-            return amount * crossRate;
-        } else if (baseToCurrency && baseToUsd) {
-            // Nếu có tỷ giá AUD/XXX, tính tỷ giá chéo từ AUD/USD
-            const crossRate = exchangeRates[baseToCurrency] / baseToUsd;
-            return amount * crossRate;
-        } else {
-            // Nếu không có tỷ giá nào, throw error
-            throw new Error(`Exchange rate for ${currency}/USD or cross rate is not available.`);
-        }
+        return parseFloat(m) / 12;
     }
 
     function convertCurrency(amount, currency1, currency2, exchangeRates) {
-        if (currency1 === currency2) return amount; // Trường hợp không cần chuyển đổi
-    
-        // 1. Tìm tỷ giá trực tiếp
+        if (currency1 === currency2) return amount;
+
         const directRate = exchangeRates[`${currency1}/${currency2}`];
         if (directRate) {
-            return amount * directRate; // Nếu có tỷ giá trực tiếp
+            return amount * directRate;
         }
-    
-        // 2. Tìm tỷ giá ngược (currency2/currency1) và đảo ngược
+
         const inverseRate = exchangeRates[`${currency2}/${currency1}`];
         if (inverseRate) {
-            return amount / inverseRate; // Đảo ngược tỷ giá
+            return amount / inverseRate;
         }
-    
-        // 3. Tính tỷ giá chéo qua AUD hoặc USD
-        const baseToCurrency1 = exchangeRates[`AUD/${currency1}`] || (1 / exchangeRates[`${currency1}/AUD`]);
-        const baseToCurrency2 = exchangeRates[`AUD/${currency2}`] || (1 / exchangeRates[`${currency2}/AUD`]);
-    
-        if (baseToCurrency1 && baseToCurrency2) {
-            const crossRate = baseToCurrency2 / baseToCurrency1;
-            return amount * crossRate; // Tính tỷ giá chéo
+
+        const baseToCcy1 = exchangeRates[`AUD/${currency1}`] || (exchangeRates[`${currency1}/AUD`] ? 1 / exchangeRates[`${currency1}/AUD`] : null);
+        const baseToCcy2 = exchangeRates[`AUD/${currency2}`] || (exchangeRates[`${currency2}/AUD`] ? 1 / exchangeRates[`${currency2}/AUD`] : null);
+
+        if (baseToCcy1 && baseToCcy2) {
+            const crossRate = baseToCcy2 / baseToCcy1;
+            return amount * crossRate;
         }
-    
-        // 4. Nếu không tìm thấy tỷ giá nào phù hợp
+
         throw new Error(`Unable to find exchange rate for ${currency1} to ${currency2}.`);
     }
 
@@ -318,4 +328,5 @@ document.addEventListener("DOMContentLoaded", () => {
         const b = Math.floor(Math.random() * 255);
         return `rgb(${r}, ${g}, ${b})`;
     }
+
 });
