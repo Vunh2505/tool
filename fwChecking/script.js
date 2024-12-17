@@ -31,9 +31,11 @@ document.addEventListener("DOMContentLoaded", () => {
                             <th>Strike</th>
                             <th>Contract Amount Valued Today (CCY2)</th>
                             <th>Counter Amount Valued Today (CCY1)</th>
-                            <th>Contract Amount Valued Today (USD)</th>
-                            <th>Counter Amount Valued Today (USD)</th>
-                            <th>NPV Value (Calc)</th>
+                            <th>CCY2/USD</th>
+                            <th>Counter Amount Valued Today (CCY2)</th>
+                            <th>CCY1/USD</th>
+                            <th>NPV Value (CCY2)</th>
+                            <th>NPV Value (USD)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -54,18 +56,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         const discountFactorQuote = getDiscountFactor(ccyPair.split("/")[1], maturityMonths, interestRates);
 
                         const contract = transaction.notional;
-                        const counter = transaction.notional * (1 / transaction.rate);
+                        const counter = transaction.notional / transaction.rate;
 
-                        const contractAmountToday = contract / (1 + discountFactorBase * yfrace);
-                        const counterAmountToday = counter / (1 + discountFactorQuote * yfrace);
-
-                        const contractAmountTodayUSD = convertCurrency(contractAmountToday, ccyPair.split("/")[1], "USD", exchangeRates);
-                        const counterAmountInContract = counterAmountToday * rate;
-                        const counterAmountTodayUSD = convertCurrency(counterAmountInContract, ccyPair.split("/")[1], "USD", exchangeRates);
+                        const contractAmountToday = contract / (1 + discountFactorQuote * yfrace);
+                        const counterAmountToday = counter / (1 + discountFactorBase * yfrace);
+                        const counterAmountTodayInContractCcy = counterAmountToday * rate;
 
                         const npv = transaction.rmiType === "LHS"
-                            ? contractAmountTodayUSD - counterAmountTodayUSD
-                            : counterAmountTodayUSD - contractAmountTodayUSD;
+                        ? contractAmountToday - counterAmountTodayInContractCcy
+                        : counterAmountTodayInContractCcy - contractAmountToday;
+
+                        const ccy2USD = convertCurrency(1, ccyPair.split("/")[1], "USD", exchangeRates);
+                        const ccy1USD = convertCurrency(1, ccyPair.split("/")[0], "USD", exchangeRates);
+                        const npvUSD = convertCurrency(npv,ccyPair.split("/")[1],"USD", exchangeRates);
+
 
                         totalNPV += npv;
 
@@ -74,16 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <td>${ccyPair}</td>
                                 <td>${transaction.tranId}</td>
                                 <td>${rate.toFixed(4)}</td>
-                                <td>${yfrace.toFixed(6)}</td>
-                                <td>${discountFactorBase.toFixed(6)}</td>
-                                <td>${discountFactorQuote.toFixed(6)}</td>
+                                <td>${yfrace.toFixed(10)}</td>
+                                <td>${discountFactorBase.toFixed(10)}</td>
+                                <td>${discountFactorQuote.toFixed(10)}</td>
                                 <td>${transaction.notional.toFixed(2)}</td>
                                 <td>${transaction.rate.toFixed(4)}</td>
                                 <td>${contractAmountToday.toFixed(2)}</td>
                                 <td>${counterAmountToday.toFixed(2)}</td>
-                                <td>${contractAmountTodayUSD.toFixed(2)}</td>
-                                <td>${counterAmountTodayUSD.toFixed(2)}</td>
+                                <td>${ccy2USD.toFixed(10)}</td>
+                                <td>${counterAmountTodayInContractCcy.toFixed(2)}</td>
+                                <td>${ccy1USD.toFixed(10)}</td>
                                 <td>${npv.toFixed(2)}</td>
+                                <td>${npvUSD.toFixed(2)}</td>
                             </tr>
                         `;
                     });
