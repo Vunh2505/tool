@@ -21,16 +21,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 <table>
                     <thead>
                         <tr>
-                            <th>CCY Pair</th>
+                            <th>CCY Pair (CCY1/CCY2)</th>
                             <th>Tran ID</th>
                             <th>Exchange Rate</th>
                             <th>Maturity Month (YF)</th>
-                            <th>Discount Factor (Base CCY)</th>
-                            <th>Discount Factor (Quote CCY)</th>
+                            <th>Interest rate (CCY1)</th>
+                            <th>Interest rate (CCY2)</th>
                             <th>Notional</th>
                             <th>Strike</th>
-                            <th>Contract Amount Valued Today</th>
-                            <th>Counter Amount Valued Today</th>
+                            <th>Contract Amount Valued Today (CCY2)</th>
+                            <th>Counter Amount Valued Today (CCY1)</th>
                             <th>Contract Amount Valued Today (USD)</th>
                             <th>Counter Amount Valued Today (USD)</th>
                             <th>NPV Value (Calc)</th>
