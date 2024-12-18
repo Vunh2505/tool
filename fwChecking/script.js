@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <th>CCY1/USD</th>
                             <th>NPV Value (CCY2)</th>
                             <th>NPV Value (USD)</th>
+                            <th>Total NPV Value (CCY2)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -90,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <td>${ccy1USD.toFixed(10)}</td>
                                 <td>${npv.toFixed(2)}</td>
                                 <td>${npvUSD.toFixed(2)}</td>
+                                <td>${totalNPV.toFixed(2)}</td>
                             </tr>
                         `;
                     });
