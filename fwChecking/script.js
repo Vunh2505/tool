@@ -30,13 +30,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             <th>Notional</th>
                             <th>Strike</th>
                             <th>Contract Amount Valued Today (CCY2)</th>
-                            <th>Counter Amount Valued Today (CCY1)</th>
-                            <th>CCY2/USD</th>
                             <th>Counter Amount Valued Today (CCY2)</th>
-                            <th>CCY1/USD</th>
                             <th>NPV Value (CCY2)</th>
-                            <th>NPV Value (USD)</th>
+                            <th>CCY2/USD</th>
+                            <th>NPV Value (CCY2/USD)</th>
                             <th>Total NPV Value (CCY2)</th>
+                            <th>Contract Amount Valued Today (CCY1)</th>
+                            <th>Counter Amount Valued Today (CCY1)</th>
+                            <th>CCY1/USD</th>
+                            <th>NPV Value (CCY1)</th>
+                            <th>NPV Value (CCY1/USD)</th>
+                            <th>Total NPV Value (CCY1)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -63,16 +67,26 @@ document.addEventListener("DOMContentLoaded", () => {
                         const counterAmountToday = counter / (1 + discountFactorBase * yfrace);
                         const counterAmountTodayInContractCcy = counterAmountToday * rate;
 
+                        const contractAmountTodayInContractCcy1 = contractAmountToday / rate;
+
                         const npv = transaction.rmiType === "LHS"
                         ? contractAmountToday - counterAmountTodayInContractCcy
                         : counterAmountTodayInContractCcy - contractAmountToday;
 
+
+                        const npv1 = transaction.rmiType === "LHS"
+                        ? contractAmountTodayInContractCcy1 - counterAmountToday
+                        : counterAmountToday - contractAmountTodayInContractCcy1;
+                        
                         const ccy2USD = convertCurrency(1, ccyPair.split("/")[1], "USD", exchangeRates);
                         const ccy1USD = convertCurrency(1, ccyPair.split("/")[0], "USD", exchangeRates);
                         const npvUSD = convertCurrency(npv,ccyPair.split("/")[1],"USD", exchangeRates);
+                        const npv1USD = convertCurrency(npv1,ccyPair.split("/")[0],"USD", exchangeRates);
 
 
                         totalNPV += npv;
+
+                        const totalNpv1 = totalNPV/rate;
 
                         tableHTML += `
                             <tr>
@@ -85,13 +99,17 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <td>${transaction.notional.toFixed(2)}</td>
                                 <td>${transaction.rate.toFixed(4)}</td>
                                 <td>${contractAmountToday.toFixed(2)}</td>
-                                <td>${counterAmountToday.toFixed(2)}</td>
-                                <td>${ccy2USD.toFixed(10)}</td>
                                 <td>${counterAmountTodayInContractCcy.toFixed(2)}</td>
-                                <td>${ccy1USD.toFixed(10)}</td>
                                 <td>${npv.toFixed(2)}</td>
+                                <td>${ccy2USD.toFixed(10)}</td>
                                 <td>${npvUSD.toFixed(2)}</td>
                                 <td>${totalNPV.toFixed(2)}</td>
+                                <td>${counterAmountToday.toFixed(2)}</td>
+                                <td>${contractAmountTodayInContractCcy1.toFixed(2)}</td>
+                                <td>${ccy1USD.toFixed(10)}</td>
+                                <td>${npv1.toFixed(2)}</td>
+                                <td>${npv1USD.toFixed(2)}</td>
+                                <td>${totalNpv1.toFixed(2)}</td>
                             </tr>
                         `;
                     });
