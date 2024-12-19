@@ -114,7 +114,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         `;
                     });
 
-                    return { rate, npv: totalNPV };
+                    //return { rate, npv: totalNPV };
+                    return { rate, npv: convertCurrency(totalNPV,ccyPair.split("/")[1],"USD", exchangeRates)};
+                    
                 });
             });
 
