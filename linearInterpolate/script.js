@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
             for (let rate = minRate; rate <= maxRate; rate = parseFloat((rate + step).toFixed(4))) {
                 const interpolatedValue = linearInterpolate(exchangeRates, values, rate);
                 if (interpolatedValue !== null) {
-                    interpolatedData.push({ x: rate, y: interpolatedValue });
+                    interpolatedData.push({ x: rate.toFixed(4), y: interpolatedValue });
                 }
             }
 
