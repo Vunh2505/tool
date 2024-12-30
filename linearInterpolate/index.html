@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Linear Interpolation with Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Linear Interpolation</h1>
+        <textarea 
+            id="jsonInput" 
+            rows="10" 
+            placeholder="Paste JSON data here (the structure with currency pair name). Ví dụ: 
+{
+  'AUD/USD': {
+    '0.468975': 34220.55005250349,
+    ...
+  }
+}">
+        </textarea>
+        <button id="generateData">Generate Chart</button>
+        <canvas id="chart"></canvas>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
