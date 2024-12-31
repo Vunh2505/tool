@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const jsonInput = document.getElementById("jsonInput");
     const generateDataButton = document.getElementById("generateData");
     const chartCanvas = document.getElementById("chart");
+    const interpolationTable = document.getElementById("interpolationTable").querySelector("tbody");
 
     generateDataButton.addEventListener("click", () => {
         try {
@@ -136,6 +137,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             });
+
+            // Xóa nội dung cũ trong bảng (nếu có)
+            interpolationTable.innerHTML = "";
+
+            // Đẩy dữ liệu nội suy vào bảng
+            interpolatedData.forEach(point => {
+                const row = interpolationTable.insertRow();
+                const rateCell = row.insertCell(0);
+                const valueCell = row.insertCell(1);
+
+                rateCell.textContent = point.x;
+                valueCell.textContent = point.y;
+            });
+            
         } catch (error) {
             console.error("Error:", error.message);
             alert("An error occurred: " + error.message);
